@@ -10,11 +10,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('expansions', function (Blueprint $table) {
+        Schema::create('card_images', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('serie')->nullable();
-            $table->date('release_date')->nullable();
+            $table->foreignId('card_id')->constrained()->cascadeOnDelete();
+            $table->string('path');
             $table->timestamps();
         });
     }
@@ -24,6 +23,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('expansions');
+        Schema::dropIfExists('card_images');
     }
 };

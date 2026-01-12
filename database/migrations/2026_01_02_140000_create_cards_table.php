@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->string('name');  // Nome del pokemon
             $table->string('type');  // Tipo di pokemon
-            $table->string('rarity');  // Rarità della carta
+            $table->string('rarity')->nullable();  // Rarità della carta
             $table->integer('hp')->nullable();  // Punti salute
             $table->decimal('price', 8, 2)->nullable();  // Prezzo stimato
             $table->text('description')->nullable();  // Descrizione
