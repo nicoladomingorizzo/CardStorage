@@ -10,6 +10,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/gallery', function () {
+    return view('guest');  // React "Guest"
+})->name('guest.gallery');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
@@ -23,7 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
     });
 
-    Route::resource('cards', CardController::class);
+    Route::resource('admin/cards', CardController::class);
     Route::post('/expansions-store-ajax', [ExpansionController::class, 'store'])->name('expansions.ajax');
 });
 
