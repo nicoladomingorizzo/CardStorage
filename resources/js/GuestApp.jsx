@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const GuestApp = () => {
@@ -7,215 +7,166 @@ const GuestApp = () => {
     const [search, setSearch] = useState('');
     const [selectedCard, setSelectedCard] = useState(null);
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
-    const filtered = cards.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-    const currentIndex = selectedCard ? filtered.findIndex(c => c.id === selectedCard.id) : -1;
+    const [isClosing, setIsClosing] = useState(false);
 
     const navigate = useNavigate();
-    const { name: nameParam } = useParams(); // Legge lo slug dall'URL (es: pikachu-v)
+    const { name: nameParam } = useParams();
 
-    // Funzione per creare lo slug (per non visualizzare l'id)
     const createSlug = (text) => {
         if (!text) return '';
-        return text
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '') // Per rimuovere caratteri speciali
-            .replace(/[\s_-]+/g, '-') // Per sostituire spazi e underscore con un singolo trattino
-            .replace(/^-+|-+$/g, ''); // Per rimuovere trattini all'inizio o alla fine
+        return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
     };
 
-    // Caricamento dati Api
+    const filteredCards = useMemo(() => {
+        return cards.filter(card =>
+            card.name.toLowerCase().startsWith(search.toLowerCase())
+        );
+    }, [cards, search]);
+
+    const currentIndex = useMemo(() => {
+        return selectedCard ? filteredCards.findIndex(c => c.id === selectedCard.id) : -1;
+    }, [selectedCard, filteredCards]);
+
     useEffect(() => {
         fetch('/api/cards')
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    setCards(data.results);
-                }
+                if (data.success) setCards(data.results);
                 setLoading(false);
             });
     }, []);
 
-    // Prendi i dai dell'url (Slug)
     useEffect(() => {
         if (nameParam && cards.length > 0) {
             const cardFound = cards.find(c => createSlug(c.name) === nameParam);
             if (cardFound) {
                 setSelectedCard(cardFound);
                 setCurrentImgIndex(0);
+                setIsClosing(false);
             } else {
                 navigate('/gallery');
             }
-        } else {
+        } else if (!nameParam && selectedCard) {
+            handleClose();
+        }
+    }, [nameParam, cards]);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
             setSelectedCard(null);
-        }
-    }, [nameParam, cards, navigate]);
-
-    // Naviogazione per immagini
-    const nextImg = (e) => {
-        e.stopPropagation();
-        if (selectedCard.images.length <= 1) return;
-        setCurrentImgIndex((prev) => (prev + 1 === selectedCard.images.length ? 0 : prev + 1));
+            setIsClosing(false);
+            navigate('/gallery');
+        }, 300);
     };
 
-    const prevImg = (e) => {
-        e.stopPropagation();
-        if (selectedCard.images.length <= 1) return;
-        setCurrentImgIndex((prev) => (prev === 0 ? selectedCard.images.length - 1 : prev - 1));
-    };
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!selectedCard) return;
+            if (e.key === 'Escape') handleClose();
+            if (e.key === 'ArrowRight' && currentIndex < filteredCards.length - 1) {
+                navigate(`/gallery/${createSlug(filteredCards[currentIndex + 1].name)}`);
+            }
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                navigate(`/gallery/${createSlug(filteredCards[currentIndex - 1].name)}`);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedCard, currentIndex, filteredCards]);
 
-    // Navigazione tra carte
-    const nextPokemon = (e) => {
-        e.stopPropagation();
-        const filtered = cards.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-        const currentIndex = filtered.findIndex(c => c.id === selectedCard.id);
+    const nextImg = (e) => { e.stopPropagation(); setCurrentImgIndex(prev => (prev + 1 === selectedCard.images.length ? 0 : prev + 1)); };
+    const prevImg = (e) => { e.stopPropagation(); setCurrentImgIndex(prev => (prev === 0 ? selectedCard.images.length - 1 : prev - 1)); };
 
-        // Se non è l'ultima carta, continua
-        if (currentIndex < filtered.length - 1) {
-            navigate(`/gallery/${createSlug(filtered[currentIndex + 1].name)}`);
-        }
-    };
-
-    const prevPokemon = (e) => {
-        e.stopPropagation();
-        const filtered = cards.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-        const currentIndex = filtered.findIndex(c => c.id === selectedCard.id);
-
-        // Se non è la prima carta, continua
-        if (currentIndex > 0) {
-            navigate(`/gallery/${createSlug(filtered[currentIndex - 1].name)}`);
-        }
-    };
-
-    const filteredCards = cards.filter(card => card.name.toLowerCase().includes(search.toLowerCase()));
-
-    if (loading) return (
-        <div className="d-flex justify-content-center align-items-center vh-100 bg-dark text-white text-uppercase fw-bold">
-            <div className="spinner-border text-warning me-3"></div> Accesso al Pokédex...
-        </div>
-    );
+    if (loading) return <div className="vh-100 d-flex justify-content-center align-items-center bg-dark text-warning fw-bold">ACCESSO AL POKÉDEX...</div>;
 
     return (
-        <div style={{ backgroundColor: '#121212', minHeight: '100vh', color: '#fff', paddingBottom: '50px' }}>
-            <div className="container py-5">
-                <header className="text-center mb-5">
-                    <h1 className="fw-bold display-3 text-warning" style={{ textShadow: '3px 3px #000', letterSpacing: '2px' }}>
-                        POKÉMON ARCHIVE
-                    </h1>
-                    <div className="row justify-content-center mt-4">
-                        <div className="col-md-6">
-                            <input
-                                type="text" className="form-control form-control-lg bg-dark text-white border-warning shadow-lg"
-                                placeholder="Cerca nella collezione..." value={search} onChange={(e) => setSearch(e.target.value)}
-                                style={{ borderRadius: '50px', paddingLeft: '25px' }}
-                            />
-                        </div>
+        <div style={{ backgroundColor: '#1a1a1a', minHeight: '100vh', color: '#fff', paddingBottom: '50px' }}>
+            <div className="container py-4 py-md-5">
+                <header className="text-center mb-4 mb-md-5 px-3">
+                    <h1 className="fw-bold display-5 display-md-4 text-warning" style={{ textShadow: '2px 2px #000' }}>POKÉMON GALLERY</h1>
+                    <div className="position-relative w-100 w-md-50 mx-auto mt-4">
+                        <input
+                            type="text" className="form-control bg-dark text-white border-warning rounded-pill py-3 px-4 shadow"
+                            placeholder="Inizia a scrivere il nome..." value={search} onChange={(e) => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button className="btn btn-sm btn-link text-warning position-absolute end-0 top-50 translate-middle-y me-3" onClick={() => setSearch('')} style={{ textDecoration: 'none' }}>✕</button>
+                        )}
                     </div>
                 </header>
 
-                <div className="row g-4">
-                    {filteredCards.map(card => (
-                        <div key={card.id} className="col-6 col-md-4 col-lg-3">
-                            <div
-                                className="h-100 p-3 card-hover-effect"
-                                onClick={() => navigate(`/gallery/${createSlug(card.name)}`)}
-                                style={{
-                                    background: 'linear-gradient(145deg, #ffd700, #c5a010)',
-                                    borderRadius: '15px', border: '4px solid #222', cursor: 'pointer', transition: '0.3s'
-                                }}
-                            >
-                                <div className="bg-white p-2 rounded mb-2 border shadow-inner">
-                                    <div className="d-flex justify-content-between px-1 mb-1">
-                                        <h6 className="fw-bold text-dark text-truncate mb-0" style={{ maxWidth: '75%' }}>{card.name}</h6>
-                                        <span className="text-danger fw-bold small">HP {card.hp}</span>
+                {/* GRIGLIA: col-12 per mobile e col-md-4 per desktop */}
+                <div className="row g-4 px-3 px-md-0">
+                    {filteredCards.length > 0 ? (
+                        filteredCards.map(card => (
+                            <div key={card.id} className="col-12 col-md-6 col-lg-3">
+                                <div className="h-100 p-4 card-hover-effect shadow" onClick={() => navigate(`/gallery/${createSlug(card.name)}`)}
+                                    style={{ background: 'linear-gradient(145deg, #ffd700, #e0c020)', borderRadius: '18px', border: '4px solid #333', cursor: 'pointer' }}>
+                                    <div className="bg-white p-3 rounded mb-2 border text-center shadow-sm position-relative">
+                                        <div className="d-flex justify-content-between px-1 mb-2">
+                                            <h5 className="fw-bold text-dark text-truncate mb-0" style={{ maxWidth: '75%' }}>{card.name}</h5>
+                                            <span className="text-danger fw-bold">HP {card.hp}</span>
+                                        </div>
+                                        <img src={card.images[0] ? `/storage/${card.images[0].path}` : ''} className="img-fluid" style={{ height: '200px', objectFit: 'contain' }} />
                                     </div>
-                                    <img
-                                        src={card.images[0] ? `/storage/${card.images[0].path}` : ''}
-                                        className="img-fluid w-100"
-                                        style={{ height: '170px', objectFit: 'contain', background: '#f0f0f0', borderRadius: '4px' }}
-                                        alt={card.name}
-                                    />
-                                </div>
-                                <div className="text-center mt-3">
-                                    <span className="badge w-100 mb-1 shadow-sm" style={{ backgroundColor: card.rarity_color || '#333', color: card.rarity_text_color || 'white' }}>
-                                        {card.rarity}
-                                    </span>
-                                    <span className="badge rounded-pill px-3 shadow-sm" style={{ backgroundColor: card.type_bg_color || '#6c757d', color: card.type_text_color || 'white' }}>
-                                        {card.type}
-                                    </span>
-                                    <div className="fw-bold mt-2 text-dark fs-4">€ {card.price}</div>
+                                    <div className="text-center mt-3">
+                                        <div className="d-flex gap-1 mb-2">
+                                            <span className="badge flex-grow-1" style={{ backgroundColor: card.rarity_color, color: card.rarity_text_color }}>{card.rarity}</span>
+                                            <span className="badge rounded-pill px-3" style={{ backgroundColor: card.type_bg_color, color: card.type_text_color }}>{card.type}</span>
+                                        </div>
+                                        <div className="fw-bold text-dark fs-4 bg-white bg-opacity-25 rounded py-1">€ {card.price}</div>
+                                    </div>
                                 </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="text-center mt-5 w-100">
+                            <h4 className="text-secondary">Nessun Pokémon trovato con iniziali "{search}"</h4>
                         </div>
-                    ))}
+                    )}
                 </div>
 
+                {/* MODALE RESPONSIVE */}
                 {selectedCard && (
-                    <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.92)', zIndex: 1050 }} onClick={() => navigate('/gallery')}>
-                        <div className="modal-dialog modal-lg modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-content border-0 shadow-lg bg-dark text-white" style={{ borderRadius: '30px', overflow: 'hidden' }}>
-                                <div className="row g-0">
-
-                                    <div className="col-md-6 d-flex align-items-center justify-content-center position-relative p-4 bg-black" style={{ minHeight: '450px' }}>
+                    <div className={`modal d-block transition-fade ${isClosing ? 'fade-out' : 'fade-in'}`} style={{ background: 'rgba(0,0,0,0.95)', zIndex: 1050 }} onClick={handleClose}>
+                        <div className="modal-dialog modal-lg modal-dialog-centered px-2" onClick={e => e.stopPropagation()}>
+                            <div className="modal-content border-0 shadow-lg bg-dark text-white" style={{ borderRadius: '25px', overflow: 'hidden' }}>
+                                <div className="row g-0 flex-column flex-md-row">
+                                    {/* IMMAGINE (Alto su mobile, sinistra su desktop) */}
+                                    <div className="col-md-6 bg-black d-flex align-items-center justify-content-center position-relative p-3" style={{ minHeight: '320px' }}>
                                         {selectedCard.images.length > 1 && (
                                             <>
-                                                <button className="btn btn-link text-warning position-absolute start-0 fs-1 px-4" onClick={prevImg} style={{ textDecoration: 'none', zIndex: 10 }}>‹</button>
-                                                <button className="btn btn-link text-warning position-absolute end-0 fs-1 px-4" onClick={nextImg} style={{ textDecoration: 'none', zIndex: 10 }}>›</button>
+                                                <button className="btn btn-link text-warning position-absolute start-0 fs-1 px-3" onClick={prevImg} style={{ textDecoration: 'none', zIndex: 10 }}>‹</button>
+                                                <button className="btn btn-link text-warning position-absolute end-0 fs-1 px-3" onClick={nextImg} style={{ textDecoration: 'none', zIndex: 10 }}>›</button>
                                             </>
                                         )}
-                                        <img
-                                            src={`/storage/${selectedCard.images[currentImgIndex]?.path}`}
-                                            className="img-fluid rounded shadow-lg"
-                                            style={{ maxHeight: '430px', border: '2px solid #444' }}
-                                        />
-                                        <div className="position-absolute bottom-0 mb-3 badge bg-warning text-dark px-3 py-2 rounded-pill shadow">
-                                            {currentImgIndex + 1} / {selectedCard.images.length}
-                                        </div>
+                                        <img src={`/storage/${selectedCard.images[currentImgIndex]?.path}`} className="img-fluid rounded" style={{ maxHeight: '350px', objectFit: 'contain' }} />
+                                        <div className="position-absolute bottom-0 mb-3 badge bg-warning text-dark px-3 py-1 rounded-pill">{currentImgIndex + 1} / {selectedCard.images.length}</div>
                                     </div>
 
-                                    <div className="col-md-6 p-5 position-relative d-flex flex-column">
-                                        <button className="btn-close btn-close-white position-absolute top-0 end-0 m-4" onClick={() => navigate('/gallery')}></button>
+                                    {/* INFO (Basso su mobile, destra su desktop) */}
+                                    <div className="col-md-6 p-4 p-md-5 d-flex flex-column justify-content-center">
                                         <div className="d-flex justify-content-between mb-4">
-                                            <button
-                                                className={`btn btn-sm btn-outline-warning rounded-pill px-3 ${currentIndex === 0 ? 'opacity-25' : ''}`}
-                                                onClick={prevPokemon}
-                                                disabled={currentIndex === 0} // Blocca il click se è la prima
-                                            >
-                                                ← Prev
-                                            </button>
-
-                                            <button
-                                                className={`btn btn-sm btn-outline-warning rounded-pill px-3 ${currentIndex === filtered.length - 1 ? 'opacity-25' : ''}`}
-                                                onClick={nextPokemon}
-                                                disabled={currentIndex === filtered.length - 1} // Blocca il click se è l'ultima
-                                            >
-                                                Next →
-                                            </button>
+                                            <button className="btn btn-sm btn-outline-warning rounded-pill px-3" onClick={() => navigate(`/gallery/${createSlug(filteredCards[currentIndex - 1].name)}`)} disabled={currentIndex === 0}>←</button>
+                                            <button className="btn btn-sm btn-warning d-md-none rounded-pill px-4 fw-bold" onClick={handleClose}>CHIUDI</button>
+                                            <button className="btn btn-sm btn-outline-warning rounded-pill px-3" onClick={() => navigate(`/gallery/${createSlug(filteredCards[currentIndex + 1].name)}`)} disabled={currentIndex === filteredCards.length - 1}>→</button>
                                         </div>
 
-                                        <h2 className="fw-bold text-warning mb-1 display-6">{selectedCard.name}</h2>
-                                        <h4 className="text-danger fw-bold mb-4">HP {selectedCard.hp}</h4>
+                                        <h2 className="fw-bold text-warning mb-0 fs-2">{selectedCard.name}</h2>
+                                        <h5 className="text-danger fw-bold mb-3">HP {selectedCard.hp}</h5>
 
                                         <div className="mb-4 d-flex gap-2">
-                                            <span className="badge p-2 px-3 shadow" style={{ backgroundColor: selectedCard.rarity_color || '#333', color: selectedCard.rarity_text_color || 'white' }}>
-                                                {selectedCard.rarity}
-                                            </span>
-                                            <span className="badge p-2 px-3 rounded-pill shadow" style={{ backgroundColor: selectedCard.type_bg_color || '#6c757d', color: selectedCard.type_text_color || 'white' }}>
-                                                {selectedCard.type}
-                                            </span>
+                                            <span className="badge px-3 py-2 shadow-sm" style={{ backgroundColor: selectedCard.rarity_color, color: selectedCard.rarity_text_color }}>{selectedCard.rarity}</span>
+                                            <span className="badge px-3 py-2 rounded-pill shadow-sm" style={{ backgroundColor: selectedCard.type_bg_color, color: selectedCard.type_text_color }}>{selectedCard.type}</span>
                                         </div>
                                         <hr className="border-secondary opacity-25" />
-                                        <p className="small text-danger mb-1 fs-3">ESPANSIONE</p>
-                                        <p className="mb-4 fw-bold text-info">{selectedCard.expansion?.name || 'Base Set'}</p>
-
-                                        <div className="p-3 bg-secondary bg-opacity-10 rounded border border-secondary border-opacity-25 italic mb-auto shadow-inner">
-                                            "{selectedCard.description || "Nessun dato disponibile."}"
+                                        <p className="small mb-2"><strong>Espansione:</strong> <span className="text-warning">{selectedCard.expansion?.name}</span></p>
+                                        <div className="p-3 bg-secondary bg-opacity-10 rounded border border-secondary border-opacity-25 italic mb-4" style={{ fontSize: '0.9rem' }}>
+                                            "{selectedCard.description || "Descrizione Pokédex non disponibile."}"
                                         </div>
-
-                                        <div className="mt-4 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
-                                            <span className="h1 fw-bold text-success mb-0">€ {selectedCard.price}</span>
-                                            <span className="text-muted small">#{selectedCard.id}</span>
-                                        </div>
+                                        <div className="h2 fw-bold text-success mb-0">€ {selectedCard.price}</div>
+                                        <button className="btn-close btn-close-white position-absolute top-0 end-0 m-4 d-none d-md-block" onClick={handleClose}></button>
                                     </div>
                                 </div>
                             </div>
@@ -226,11 +177,13 @@ const GuestApp = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
-                .card-hover-effect:hover { 
-                    transform: translateY(-10px) rotate(1deg); 
-                    box-shadow: 0 20px 40px rgba(255, 215, 0, 0.25) !important; 
+                .card-hover-effect { transition: all 0.3s ease; }
+                @media (min-width: 768px) {
+                    .card-hover-effect:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important; }
                 }
-                .shadow-inner { box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+                .transition-fade { transition: opacity 0.3s ease, transform 0.3s ease; }
+                .fade-in { opacity: 1; transform: scale(1); }
+                .fade-out { opacity: 0; transform: scale(0.9); }
             `}} />
         </div>
     );
