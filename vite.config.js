@@ -8,7 +8,7 @@ export default defineConfig({
         react(), // Attivato il plugin React
         laravel({
             // Cambiata l'estensione di app.js in app.jsx
-            input: ['resources/scss/app.scss', 'resources/js/app.jsx'],
+            input: ['resources/scss/app.scss', 'resources/js/app.js'],
             refresh: true,
         }),
     ],
