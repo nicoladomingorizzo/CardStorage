@@ -5,33 +5,57 @@
     <div class="container pb-5">
         <div class="card shadow mx-auto" style="max-width: 900px;">
             <div class="card-header bg-primary text-white py-3">
-                <h4 class="mb-0">➕ Aggiungi Carta Pokémon</h4>
+                <h4 class="mb-0">➕ Aggiungi Carta GCC</h4>
             </div>
             <div class="card-body p-4">
+                @if ($errors->any())
+                    <div class="alert alert-danger shadow-sm">
+                        <p class="fw-bold">Attenzione! Ci sono degli errori:</p>
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 <form action="{{ route('cards.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="row g-3">
-                        {{-- Nome e Tipo --}}
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Nome</label>
-                            <input type="text" name="name" class="form-control" placeholder="es. Charizard" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Tipo GCC</label>
-                            <select name="type" class="form-select" required>
-                                <option value="" disabled selected>Seleziona tipo...</option>
-                                @foreach (['Erba', 'Fuoco', 'Acqua', 'Elettro', 'Psico', 'Lotta', 'Buio', 'Acciaio', 'Drago', 'Incolore', 'Folletto'] as $t)
-                                    <option value="{{ $t }}">{{ $t }}</option>
-                                @endforeach
-                            </select>
+                        {{-- Nome --}}
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Nome Carta</label>
+                            <input type="text" name="name" class="form-control"
+                                placeholder="es. Charizard o Ricerca Accademica" required>
                         </div>
 
-                        {{-- HP, Rarità e Prezzo --}}
+                        {{-- HP --}}
                         <div class="col-md-4">
                             <label class="form-label fw-bold">HP</label>
-                            <input type="number" name="hp" class="form-control" placeholder="es. 120">
+                            <input type="number" name="hp" class="form-control"
+                                placeholder="es. 120 (lascia vuoto per Allenatori)">
                         </div>
-                        <div class="col-md-4">
+
+                        {{-- Tipo GCC --}}
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-bold">Tipo GCC</label>
+                            <div class="input-group">
+                                <select name="type" id="type_select" class="form-select" required>
+                                    <option value="" disabled selected>Scegli il tipo...</option>
+                                    @foreach ($existingTypes as $t)
+                                        <option value="{{ $t->type }}">
+                                            {{ $t->type }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal"
+                                    data-bs-target="#modalType">
+                                    <i class="bi bi-plus-circle"></i> Nuovo Tipo
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Rarità e Prezzo --}}
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">Rarità</label>
                             <select name="rarity" class="form-select">
                                 @foreach (['Comune', 'Non Comune', 'Rara', 'Rara Holo', 'Ultra Rara', 'Illustrazione Rara', 'Illustrazione Speciale', 'Rara Segreta'] as $r)
@@ -39,7 +63,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-bold">Prezzo (€)</label>
                             <input type="number" step="0.01" name="price" class="form-control" placeholder="0.00">
                         </div>
@@ -70,8 +94,9 @@
 
                         {{-- Descrizione --}}
                         <div class="col-12">
-                            <label class="form-label fw-bold">Descrizione / Note</label>
-                            <textarea name="description" class="form-control" rows="3" placeholder="Dettagli aggiuntivi sulla carta..."></textarea>
+                            <label class="form-label fw-bold">Effetto Carta / Descrizione</label>
+                            <textarea name="description" class="form-control" rows="3"
+                                placeholder="Dettagli aggiuntivi o testo della carta..."></textarea>
                         </div>
 
                         <div class="col-12 mt-4 text-center">
@@ -82,5 +107,6 @@
             </div>
         </div>
     </div>
-    @include('partials.modal-expansion')
+    @include('admin.partials.modal-expansion')
+    @include('admin.partials.modal-type')
 @endsection

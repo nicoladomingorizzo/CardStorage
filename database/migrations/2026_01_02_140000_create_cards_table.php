@@ -12,15 +12,13 @@ return new class extends Migration {
     {
         Schema::create('cards', function (Blueprint $table) {
             $table->id();
-            $table->string('name');  // Nome del pokemon
-            $table->string('type');  // Tipo di pokemon
-            $table->string('rarity')->nullable();  // Rarità della carta
-            $table->integer('hp')->nullable();  // Punti salute
-            $table->decimal('price', 8, 2)->nullable();  // Prezzo stimato
-            $table->text('description')->nullable();  // Descrizione
-            $table->string('image_path')->nullable();  // Per la foto della carta
-            $table->foreignId('expansion_id')->constrained()->onDelete('cascade');  // Espansione della carta
-
+            $table->string('name');
+            $table->integer('hp')->nullable();
+            $table->string('type');
+            $table->string('rarity')->nullable();
+            $table->decimal('price', 8, 2)->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('expansion_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

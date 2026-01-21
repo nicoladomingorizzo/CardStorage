@@ -8,12 +8,11 @@ class Card extends Model
 {
     protected $fillable = [
         'name',
+        'hp',
         'type',
         'rarity',
-        'hp',
         'price',
         'description',
-        'image_path',
         'expansion_id'
     ];
 

@@ -15,7 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        \App\Models\Expansion::create([
+            'id' => 1,
+            'name' => 'Scarlatto e Violetto',
+            // aggiungi altri campi se obbligatori nella tua migration
+        ]);
 
         $this->call([CardsTableSeeder::class]);
     }

@@ -176,7 +176,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
                     <form id="delForm" method="POST" action="">
                         @csrf
-                        @method('DELETE')
+                        @method('destroy')
                         <button type="submit" class="btn btn-danger px-4">Elimina</button>
                     </form>
                 </div>
