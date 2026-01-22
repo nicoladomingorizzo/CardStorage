@@ -33,25 +33,30 @@
                     </div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col-md-6 mb-3 text-start">
+                <div class="row mt-3 text-start">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Espansione / Set</label>
-                        <div class="input-group">
-                            <select name="expansion_id" id="expansion_select" class="form-select" required>
-                                <option value="">Seleziona Set...</option>
-                                @foreach ($expansions as $expansion)
-                                    <option value="{{ $expansion->id }}">{{ $expansion->name }}</option>
-                                @endforeach
-                            </select>
-                            <button class="btn btn-primary" type="button" data-bs-toggle="modal"
-                                data-bs-target="#newExpansionModal">+</button>
-                        </div>
+                        <input type="text" name="expansion_name" list="expansionSuggestions" class="form-control"
+                            placeholder="Scegli o scrivi set..." required>
+                        <datalist id="expansionSuggestions">
+                            @foreach ($expansions as $expansion)
+                                <option value="{{ $expansion->name }}">
+                            @endforeach
+                        </datalist>
                     </div>
-                    <div class="col-md-3 mb-3 text-start">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Rarità</label>
-                        <input type="text" name="rarity" class="form-control">
+                        <input type="text" name="rarity" list="raritySuggestions" class="form-control"
+                            placeholder="Scegli o scrivi rarità...">
+                        <datalist id="raritySuggestions">
+                            <option value="Comune">
+                            <option value="Non Comune">
+                            <option value="Rara">
+                            <option value="Rara Holo">
+                            <option value="Ultra Rara">
+                        </datalist>
                     </div>
-                    <div class="col-md-3 mb-3 text-start">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Prezzo (€)</label>
                         <input type="number" step="0.01" name="price" class="form-control" placeholder="0.00">
                     </div>
@@ -59,19 +64,17 @@
 
                 <div class="mb-4 mt-3 text-start">
                     <label class="form-label fw-bold">Descrizione</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Es. Condizioni carta..."></textarea>
                 </div>
 
                 <div class="mb-4 text-start">
                     <label class="form-label fw-bold">Carica Immagini</label>
-                    <input type="file" name="images[]" class="form-control" multiple
+                    <input type="file" name="images[]" class="form-control shadow-sm" multiple
                         accept="image/jpeg,image/png,image/jpg,image/webp">
                     <div class="mt-2">
-                        <small class="text-muted d-block">
-                            <i class="bi bi-info-circle me-1"></i> Formati consentiti: <strong>JPEG, PNG, JPG,
-                                WEBP</strong>.
-                        </small>
-                        <small class="text-primary italic">Stiamo lavorando per implementare ulteriori formati
+                        <small class="text-muted d-block">I formati delle foto devono assolutamente essere solo:
+                            <strong>jpeg, png, jpg, webp</strong>.</small>
+                        <small class="text-primary italic">Stiamo lavorando per implementare altri formati
                             consentiti.</small>
                     </div>
                 </div>
@@ -80,43 +83,4 @@
             </form>
         </div>
     </div>
-
-    {{-- Modale e Script rimangono identici --}}
-    <div class="modal fade" id="newExpansionModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-dark">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nuovo Set</h5><button type="button" class="btn-close"
-                        data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-start"><label class="form-label">Nome Set</label><input type="text"
-                        id="new_expansion_name" class="form-control"></div>
-                <div class="modal-footer"><button type="button" class="btn btn-primary"
-                        id="save_expansion_btn">Salva</button></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('save_expansion_btn').addEventListener('click', function() {
-            const name = document.getElementById('new_expansion_name').value;
-            fetch("{{ route('expansions.ajax') }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        name: name
-                    })
-                })
-                .then(res => res.json()).then(data => {
-                    if (data.success) {
-                        const select = document.getElementById('expansion_select');
-                        select.add(new Option(data.name, data.id, true, true));
-                        bootstrap.Modal.getInstance(document.getElementById('newExpansionModal')).hide();
-                    }
-                });
-        });
-    </script>
 @endsection

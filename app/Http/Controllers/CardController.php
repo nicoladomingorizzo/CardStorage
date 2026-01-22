@@ -126,4 +126,24 @@ class CardController extends Controller
 
         return redirect()->route('admin.cards.index')->with('success', 'Carta aggiornata con successo!');
     }
+
+    public function destroy(Card $card)
+    {
+        // Recupera tutte le immagini associate alla carta
+        $images = $card->images;
+
+        foreach ($images as $image) {
+            // Cancella il file fisico dallo storage public
+            if (Storage::disk('public')->exists($image->path)) {
+                Storage::disk('public')->delete($image->path);
+            }
+            // Elimina il record dell'immagine dal database
+            $image->delete();
+        }
+
+        // Elimina la carta
+        $card->delete();
+
+        return redirect()->route('admin.cards.index')->with('success', 'Carta e relative immagini eliminate correttamente!');
+    }
 }
