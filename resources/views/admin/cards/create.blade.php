@@ -5,79 +5,117 @@
 @section('content')
     <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold">🆕 Aggiungi Nuova Carta</h2>
+            <h2 class="fw-bold text-primary">🆕 Nuova Carta Pokémon</h2>
             <a href="{{ route('admin.cards.index') }}" class="btn btn-outline-secondary">Torna alla lista</a>
         </div>
 
         <div class="card shadow-sm border-0 p-4">
             <form action="{{ route('admin.cards.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-3 text-start">
                         <label class="form-label fw-bold">Nome Pokémon</label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                            value="{{ old('name') }}" required>
+                        <input type="text" name="name" class="form-control" placeholder="es. Charizard" required>
                     </div>
-
-                    {{-- CAMPO IBRIDO: Scelta rapida + Scrittura libera --}}
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-3 mb-3 text-start">
                         <label class="form-label fw-bold">Tipo GCC</label>
-                        <input type="text" name="type" list="typeSuggestions"
-                            class="form-control @error('type') is-invalid @enderror" value="{{ old('type') }}"
-                            placeholder="Scegli o scrivi nuovo..." required>
+                        <input type="text" name="type" list="typeSuggestions" class="form-control"
+                            placeholder="Scegli o scrivi..." required>
                         <datalist id="typeSuggestions">
-                            @php $defaults = ['Fuoco', 'Acqua', 'Erba', 'Elettro', 'Psico', 'Lotta', 'Oscurità', 'Metallo', 'Drago', 'Incolore', 'Folletto', 'Allenatore']; @endphp
-                            @foreach (collect($defaults)->merge($existingTypes)->unique()->sort() as $type)
+                            @foreach ($existingTypes as $type)
                                 <option value="{{ $type }}">
                             @endforeach
                         </datalist>
                     </div>
-
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold">Punti Salute (HP)</label>
-                        <input type="number" name="hp" class="form-control" value="{{ old('hp') }}">
+                    <div class="col-md-3 mb-3 text-start">
+                        <label class="form-label fw-bold">HP</label>
+                        <input type="number" name="hp" class="form-control" placeholder="es. 120">
                     </div>
                 </div>
 
                 <div class="row mt-3">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Espansione</label>
-                        <select name="expansion_id" class="form-select" required>
-                            <option value="">Seleziona Set...</option>
-                            @foreach ($expansions as $expansion)
-                                <option value="{{ $expansion->id }}"
-                                    {{ old('expansion_id') == $expansion->id ? 'selected' : '' }}>
-                                    {{ $expansion->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                    <div class="col-md-6 mb-3 text-start">
+                        <label class="form-label fw-bold">Espansione / Set</label>
+                        <div class="input-group">
+                            <select name="expansion_id" id="expansion_select" class="form-select" required>
+                                <option value="">Seleziona Set...</option>
+                                @foreach ($expansions as $expansion)
+                                    <option value="{{ $expansion->id }}">{{ $expansion->name }}</option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-primary" type="button" data-bs-toggle="modal"
+                                data-bs-target="#newExpansionModal">+</button>
+                        </div>
                     </div>
-
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-3 mb-3 text-start">
                         <label class="form-label fw-bold">Rarità</label>
-                        <input type="text" name="rarity" class="form-control" value="{{ old('rarity') }}">
+                        <input type="text" name="rarity" class="form-control">
                     </div>
-
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold">Valore (€)</label>
-                        <input type="number" step="0.01" name="price" class="form-control"
-                            value="{{ old('price') }}">
+                    <div class="col-md-3 mb-3 text-start">
+                        <label class="form-label fw-bold">Prezzo (€)</label>
+                        <input type="number" step="0.01" name="price" class="form-control" placeholder="0.00">
                     </div>
                 </div>
 
-                <div class="mb-4 mt-3">
-                    <label class="form-label fw-bold">Descrizione Carta</label>
-                    <textarea name="description" class="form-control" rows="3">{{ old('description') }}</textarea>
+                <div class="mb-4 mt-3 text-start">
+                    <label class="form-label fw-bold">Descrizione</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Carica Immagini</label>
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-bold">Immagini</label>
                     <input type="file" name="images[]" class="form-control" multiple accept="image/*">
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 shadow">💾 Salva Nuova Carta</button>
+                <button type="submit" class="btn btn-success btn-lg w-100 shadow fw-bold">SALVA CARTA</button>
             </form>
         </div>
     </div>
+
+    <div class="modal fade" id="newExpansionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuovo Set</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-start text-dark">
+                    <label class="form-label">Nome Set</label>
+                    <input type="text" id="new_expansion_name" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="save_expansion_btn">Salva</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('save_expansion_btn').addEventListener('click', function() {
+                const name = document.getElementById('new_expansion_name').value;
+                if (!name) return;
+                fetch("{{ route('expansions.ajax') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            name: name
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const select = document.getElementById('expansion_select');
+                            select.add(new Option(data.name, data.id, true, true));
+                            bootstrap.Modal.getInstance(document.getElementById('newExpansionModal'))
+                                .hide();
+                            document.getElementById('new_expansion_name').value = '';
+                        }
+                    });
+            });
+        });
+    </script>
 @endsection

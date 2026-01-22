@@ -5,7 +5,7 @@
 @section('content')
     <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold">✏️ Modifica: {{ $card->name }}</h2>
+            <h2 class="fw-bold text-warning">✏️ Modifica: {{ $card->name }}</h2>
             <a href="{{ route('admin.cards.index') }}" class="btn btn-outline-secondary">Annulla</a>
         </div>
 
@@ -15,89 +15,124 @@
                 @method('PUT')
 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6 mb-3 text-start">
                         <label class="form-label fw-bold">Nome Pokémon</label>
-                        <input type="text" name="name" class="form-control" value="{{ old('name', $card->name) }}"
-                            required>
+                        <input type="text" name="name" class="form-control" value="{{ $card->name }}" required>
                     </div>
-
-                    {{-- QUI PUOI SCEGLIERE O SCRIVERE UN TIPO NUOVO --}}
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-3 mb-3 text-start">
                         <label class="form-label fw-bold">Tipo GCC</label>
                         <input type="text" name="type" list="typeSuggestions" class="form-control"
-                            value="{{ old('type', $card->type) }}" placeholder="Scegli o scrivi nuovo..." required>
+                            value="{{ $card->type }}" required>
                         <datalist id="typeSuggestions">
-                            @php $defaults = ['Fuoco', 'Acqua', 'Erba', 'Elettro', 'Psico', 'Lotta', 'Oscurità', 'Metallo', 'Drago', 'Incolore', 'Folletto', 'Allenatore']; @endphp
-                            @foreach (collect($defaults)->merge($existingTypes)->unique()->sort() as $type)
+                            @foreach ($existingTypes as $type)
                                 <option value="{{ $type }}">
                             @endforeach
                         </datalist>
                     </div>
-
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-3 mb-3 text-start">
                         <label class="form-label fw-bold">HP</label>
-                        <input type="number" name="hp" class="form-control" value="{{ old('hp', $card->hp) }}">
+                        <input type="number" name="hp" class="form-control" value="{{ $card->hp }}">
                     </div>
                 </div>
 
-                <div class="row mt-3">
+                <div class="row mt-3 text-start">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Espansione</label>
-                        <select name="expansion_id" class="form-select" required>
-                            @foreach ($expansions as $expansion)
-                                <option value="{{ $expansion->id }}"
-                                    {{ $card->expansion_id == $expansion->id ? 'selected' : '' }}>
-                                    {{ $expansion->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label class="form-label fw-bold">Espansione / Set</label>
+                        <div class="input-group">
+                            <select name="expansion_id" id="expansion_select" class="form-select" required>
+                                @foreach ($expansions as $expansion)
+                                    <option value="{{ $expansion->id }}"
+                                        {{ $card->expansion_id == $expansion->id ? 'selected' : '' }}>{{ $expansion->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-primary" type="button" data-bs-toggle="modal"
+                                data-bs-target="#newExpansionModal">+</button>
+                        </div>
                     </div>
-
                     <div class="col-md-3 mb-3">
                         <label class="form-label fw-bold">Rarità</label>
-                        <input type="text" name="rarity" class="form-control"
-                            value="{{ old('rarity', $card->rarity) }}">
+                        <input type="text" name="rarity" class="form-control" value="{{ $card->rarity }}">
                     </div>
-
                     <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold">Valore (€)</label>
+                        <label class="form-label fw-bold">Prezzo (€)</label>
                         <input type="number" step="0.01" name="price" class="form-control"
-                            value="{{ old('price', $card->price) }}">
+                            value="{{ $card->price }}">
                     </div>
                 </div>
 
-                <div class="mb-4 mt-3">
-                    <label class="form-label fw-bold">Descrizione Pokédex</label>
-                    <textarea name="description" class="form-control" rows="3">{{ old('description', $card->description) }}</textarea>
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-bold">Descrizione</label>
+                    <textarea name="description" class="form-control" rows="3">{{ $card->description }}</textarea>
                 </div>
 
-                {{-- Immagini Esistenti --}}
-                <div class="mb-4">
-                    <label class="form-label fw-bold d-block mb-3">Immagini Caricate (Seleziona per rimuovere)</label>
-                    <div class="row g-3">
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-bold d-block mb-3 text-danger">Galleria (Seleziona per rimuovere)</label>
+                    <div class="row g-2">
                         @foreach ($card->images as $image)
-                            <div class="col-6 col-md-2 text-center">
-                                <div class="card h-100 border p-2 shadow-sm">
-                                    <img src="{{ asset('storage/' . $image->path) }}"
-                                        class="card-img-top rounded shadow-sm" style="height: 120px; object-fit: cover;">
-                                    <div class="card-body p-1 mt-2">
-                                        <input type="checkbox" name="remove_images[]" value="{{ $image->id }}"
-                                            class="form-check-input border-danger">
-                                        <label class="small text-danger fw-bold">Elimina</label>
-                                    </div>
-                                </div>
+                            <div class="col-md-2 text-center border p-2 rounded shadow-sm bg-white mx-1">
+                                <img src="{{ asset('storage/' . $image->path) }}" class="img-fluid rounded mb-2"
+                                    style="height: 80px; width:100%; object-fit: cover;">
+                                <input type="checkbox" name="remove_images[]" value="{{ $image->id }}">
+                                <label class="small d-block text-danger">Elimina</label>
                             </div>
                         @endforeach
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Aggiungi Nuove Immagini</label>
+                <div class="mb-4 text-start">
+                    <label class="form-label fw-bold text-primary">Aggiungi altre foto</label>
                     <input type="file" name="images[]" class="form-control shadow-sm" multiple accept="image/*">
                 </div>
 
-                <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow">Aggiorna Carta</button>
+                <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow">AGGIORNA CARTA</button>
             </form>
         </div>
     </div>
+
+    <div class="modal fade" id="newExpansionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-dark">
+                <div class="modal-header">
+                    <h5>Nuovo Set</h5>
+                </div>
+                <div class="modal-body text-start">
+                    <label class="form-label">Nome Set</label>
+                    <input type="text" id="new_expansion_name" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="save_expansion_btn" class="btn btn-primary">Salva</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('save_expansion_btn').addEventListener('click', function() {
+                const name = document.getElementById('new_expansion_name').value;
+                if (!name) return;
+                fetch("{{ route('expansions.ajax') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            name: name
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const select = document.getElementById('expansion_select');
+                            select.add(new Option(data.name, data.id, true, true));
+                            bootstrap.Modal.getInstance(document.getElementById('newExpansionModal'))
+                                .hide();
+                            document.getElementById('new_expansion_name').value = '';
+                        }
+                    });
+            });
+        });
+    </script>
 @endsection

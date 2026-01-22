@@ -10,21 +10,30 @@ use Illuminate\Support\Facades\Storage;
 
 class CardController extends Controller
 {
+    /**
+     * Visualizza la lista delle carte.
+     */
     public function index()
     {
         $cards = Card::with(['expansion', 'images'])->get();
         return view('admin.cards.index', compact('cards'));
     }
 
+    /**
+     * Mostra il form di creazione.
+     */
     public function create()
     {
         $expansions = Expansion::all();
-        // Recupera i tipi unici già presenti, ordinati alfabeticamente
+        // Recupera i tipi unici per i suggerimenti (datalist)
         $existingTypes = Card::distinct()->whereNotNull('type')->orderBy('type')->pluck('type');
 
         return view('admin.cards.create', compact('expansions', 'existingTypes'));
     }
 
+    /**
+     * Salva una nuova carta nel database.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -36,21 +45,13 @@ class CardController extends Controller
             'description' => 'nullable|string',
             'expansion_id' => 'required|exists:expansions,id',
             'images' => 'nullable|array',
-            // Alzato a 10MB (10240 KB)
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,heic|max:10240',
         ]);
 
-        // Creazione carta con i dati validati
-        $card = Card::create([
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'hp' => $validated['hp'],
-            'price' => $validated['price'],
-            'rarity' => $validated['rarity'],
-            'description' => $validated['description'],
-            'expansion_id' => $validated['expansion_id'],
-        ]);
+        // Creazione carta
+        $card = Card::create($validated);
 
+        // Gestione caricamento immagini multiple
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $path = $file->store('cards/gallery', 'public');
@@ -58,24 +59,35 @@ class CardController extends Controller
             }
         }
 
-        return redirect()->route('cards.index')->with('success', 'Carta creata con successo!');
+        // Corretto redirect alla rotta admin
+        return redirect()->route('admin.cards.index')->with('success', 'Carta creata con successo!');
     }
 
+    /**
+     * Mostra il dettaglio di una singola carta.
+     */
     public function show(Card $card)
     {
         $card->load(['images', 'expansion']);
         return view('admin.cards.show', compact('card'));
     }
 
+    /**
+     * Mostra il form di modifica.
+     */
     public function edit(Card $card)
     {
         $expansions = Expansion::all();
         $card->load('images');
+        // Recupera i tipi unici per i suggerimenti
         $existingTypes = Card::distinct()->whereNotNull('type')->orderBy('type')->pluck('type');
 
         return view('admin.cards.edit', compact('card', 'expansions', 'existingTypes'));
     }
 
+    /**
+     * Aggiorna la carta esistente.
+     */
     public function update(Request $request, Card $card)
     {
         $validated = $request->validate([
@@ -87,10 +99,10 @@ class CardController extends Controller
             'rarity' => 'nullable|string',
             'description' => 'nullable|string',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|mimes:jpeg,png,jpg,webp|max:10240',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,heic|max:10240',
         ]);
 
-        // Rimozione immagini selezionate
+        // Rimozione immagini selezionate (checkbox nell'edit)
         if ($request->has('remove_images')) {
             foreach ($request->remove_images as $imageId) {
                 $image = CardImage::find($imageId);
@@ -101,7 +113,7 @@ class CardController extends Controller
             }
         }
 
-        // Caricamento nuove immagini
+        // Caricamento nuove immagini aggiuntive
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $path = $file->store('cards/gallery', 'public');
@@ -109,31 +121,9 @@ class CardController extends Controller
             }
         }
 
-        // Aggiornamento dati testuali usando solo i campi validati
-        $card->update([
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'hp' => $validated['hp'],
-            'price' => $validated['price'],
-            'rarity' => $validated['rarity'],
-            'description' => $validated['description'],
-            'expansion_id' => $validated['expansion_id'],
-        ]);
+        // Aggiornamento dati testuali
+        $card->update($validated);
 
         return redirect()->route('admin.cards.index')->with('success', 'Carta aggiornata con successo!');
-    }
-
-    public function destroy(Card $card)
-    {
-        // Elimina fisicamente i file dallo storage
-        foreach ($card->images as $image) {
-            Storage::disk('public')->delete($image->path);
-            $image->delete();
-        }
-
-        // Elimina la carta
-        $card->delete();
-
-        return redirect()->route('admin.cards.index')->with('success', 'Carta eliminata correttamente.');
     }
 }
