@@ -45,7 +45,7 @@ class CardController extends Controller
             'description' => 'nullable|string',
             'expansion_id' => 'required|exists:expansions,id',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,heic|max:10240',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
         // Creazione carta
