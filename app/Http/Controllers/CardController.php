@@ -19,7 +19,9 @@ class CardController extends Controller
     public function create()
     {
         $expansions = Expansion::all();
-        $existingTypes = Card::select('type')->distinct()->get();
+        // Recupera i tipi unici già presenti, ordinati alfabeticamente
+        $existingTypes = Card::distinct()->whereNotNull('type')->orderBy('type')->pluck('type');
+
         return view('admin.cards.create', compact('expansions', 'existingTypes'));
     }
 
@@ -69,7 +71,9 @@ class CardController extends Controller
     {
         $expansions = Expansion::all();
         $card->load('images');
-        return view('admin.cards.edit', compact('card', 'expansions'));
+        $existingTypes = Card::distinct()->whereNotNull('type')->orderBy('type')->pluck('type');
+
+        return view('admin.cards.edit', compact('card', 'expansions', 'existingTypes'));
     }
 
     public function update(Request $request, Card $card)
@@ -121,10 +125,15 @@ class CardController extends Controller
 
     public function destroy(Card $card)
     {
+        // Elimina fisicamente i file dallo storage
         foreach ($card->images as $image) {
             Storage::disk('public')->delete($image->path);
+            $image->delete();
         }
+
+        // Elimina la carta
         $card->delete();
-        return redirect()->route('cards.index')->with('success', 'Carta eliminata correttamente.');
+
+        return redirect()->route('admin.cards.index')->with('success', 'Carta eliminata correttamente.');
     }
 }

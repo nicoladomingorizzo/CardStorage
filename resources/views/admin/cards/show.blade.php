@@ -34,7 +34,7 @@
                     </div>
                     <h5>Descrizione:</h5>
                     <p class="bg-light p-3 rounded border italic">{{ $card->description ?? 'Nessuna nota aggiuntiva.' }}</p>
-                    <a href="{{ route('cards.index') }}" class="btn btn-outline-dark mt-4">← Torna alla Collezione</a>
+                    <a href="{{ route('admin.cards.index') }}" class="btn btn-outline-dark mt-4">← Torna alla Collezione</a>
                 </div>
             </div>
         </div>

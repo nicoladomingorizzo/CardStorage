@@ -17,7 +17,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ route('cards.index') }}">🎴 PokéCollector</a>
+            <a class="navbar-brand fw-bold" href="{{ route('admin.cards.index') }}">🎴 PokéCollector</a>
         </div>
     </nav>
 

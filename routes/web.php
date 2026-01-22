@@ -11,10 +11,11 @@ Route::get('/', function () {
 });
 
 Route::get('/gallery', function () {
-    return view('guest');  // React "Guest"
+    return view('guest');
 })->name('guest.gallery');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard e Profilo
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -23,11 +24,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Gruppo Amministrazione (Tutto sotto /admin/...)
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
+
+        // Gestione Carte: l'URL sarà /admin/cards e il nome admin.cards.index/destroy/ecc.
+        Route::resource('cards', CardController::class);
     });
 
-    Route::resource('admin/cards', CardController::class);
+    // Rotta AJAX per espansioni
     Route::post('/expansions-store-ajax', [ExpansionController::class, 'store'])->name('expansions.ajax');
 });
 

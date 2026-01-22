@@ -8,3 +8,6 @@ Route::get('/cards', [CardController::class, 'index']);
 
 // Dettaglio singolo
 Route::get('/cards/{id}', [CardController::class, 'show']);
+
+// Eliminazione
+Route::delete('/cards/{id}', [CardController::class, 'destroy']);
