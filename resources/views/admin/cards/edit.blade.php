@@ -62,27 +62,30 @@
                 </div>
 
                 <div class="mb-4 text-start">
-                    <label class="form-label fw-bold">Descrizione</label>
-                    <textarea name="description" class="form-control" rows="3">{{ $card->description }}</textarea>
-                </div>
-
-                <div class="mb-4 text-start">
                     <label class="form-label fw-bold d-block mb-3 text-danger">Galleria (Seleziona per rimuovere)</label>
                     <div class="row g-2">
                         @foreach ($card->images as $image)
                             <div class="col-md-2 text-center border p-2 rounded shadow-sm bg-white mx-1">
                                 <img src="{{ asset('storage/' . $image->path) }}" class="img-fluid rounded mb-2"
-                                    style="height: 80px; width:100%; object-fit: cover;">
+                                    style="height: 80px; object-fit: cover;">
                                 <input type="checkbox" name="remove_images[]" value="{{ $image->id }}">
-                                <label class="small d-block text-danger">Elimina</label>
                             </div>
                         @endforeach
                     </div>
                 </div>
 
                 <div class="mb-4 text-start">
-                    <label class="form-label fw-bold text-primary">Aggiungi altre foto</label>
-                    <input type="file" name="images[]" class="form-control shadow-sm" multiple accept="image/*">
+                    <label class="form-label fw-bold">Aggiungi altre foto</label>
+                    <input type="file" name="images[]" class="form-control" multiple
+                        accept="image/jpeg,image/png,image/jpg,image/webp">
+                    <div class="mt-2">
+                        <small class="text-muted d-block">
+                            <i class="bi bi-info-circle me-1"></i> Formati consentiti: <strong>JPEG, PNG, JPG,
+                                WEBP</strong>.
+                        </small>
+                        <small class="text-primary italic">Stiamo lavorando per implementare ulteriori formati
+                            consentiti.</small>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow">AGGIORNA CARTA</button>
@@ -90,49 +93,40 @@
         </div>
     </div>
 
+    {{-- Modale e Script rimangono identici --}}
     <div class="modal fade" id="newExpansionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-dark">
                 <div class="modal-header">
                     <h5>Nuovo Set</h5>
                 </div>
-                <div class="modal-body text-start">
-                    <label class="form-label">Nome Set</label>
-                    <input type="text" id="new_expansion_name" class="form-control">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="save_expansion_btn" class="btn btn-primary">Salva</button>
-                </div>
+                <div class="modal-body text-start"><label class="form-label">Nome Set</label><input type="text"
+                        id="new_expansion_name" class="form-control"></div>
+                <div class="modal-footer"><button id="save_expansion_btn" class="btn btn-primary">Salva</button></div>
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('save_expansion_btn').addEventListener('click', function() {
-                const name = document.getElementById('new_expansion_name').value;
-                if (!name) return;
-                fetch("{{ route('expansions.ajax') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            name: name
-                        })
+        document.getElementById('save_expansion_btn').addEventListener('click', function() {
+            const name = document.getElementById('new_expansion_name').value;
+            fetch("{{ route('expansions.ajax') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        name: name
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            const select = document.getElementById('expansion_select');
-                            select.add(new Option(data.name, data.id, true, true));
-                            bootstrap.Modal.getInstance(document.getElementById('newExpansionModal'))
-                                .hide();
-                            document.getElementById('new_expansion_name').value = '';
-                        }
-                    });
-            });
+                })
+                .then(res => res.json()).then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('expansion_select');
+                        select.add(new Option(data.name, data.id, true, true));
+                        bootstrap.Modal.getInstance(document.getElementById('newExpansionModal')).hide();
+                    }
+                });
         });
     </script>
 @endsection
