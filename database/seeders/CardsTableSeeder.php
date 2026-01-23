@@ -17,7 +17,7 @@ class CardsTableSeeder extends Seeder
                 'rarity' => 'Comune',
                 'price' => 5.5,
                 'description' => 'Quando diversi di questi Pokémon si radunano, la loro elettricità può causare tempeste di fulmini.',
-                'expansion_id' => 1,  // Assicurati che l'ID esista!
+                'expansion_id' => 1,
             ],
             [
                 'name' => 'Mega Ball',
